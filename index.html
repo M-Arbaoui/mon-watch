@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover">
+  <title>Watchy.</title>
+  <meta name="description" content="Watchy. — A quiet, cinematic streaming experience.">
+  <meta name="theme-color" content="#09090B">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://m-arbaoui.github.io/watchy/">
+  <meta property="og:title" content="Watchy.">
+  <meta property="og:description" content="Cinema without the noise.">
+  <meta name="twitter:card"             content="summary_large_image">
+  <meta property="og:image"             content="https://m-arbaoui.github.io/watchy/og-image.png">
+  <meta property="og:image:secure_url"  content="https://m-arbaoui.github.io/watchy/og-image.png">
+  <meta property="og:image:width"       content="1400">
+  <meta property="og:image:height"      content="738">
+  <meta property="og:image:type"        content="image/png">
+  <meta property="og:image:alt"         content="Watchy. — Admit One. Unlimited Movies. Unlimited Series.">
+  <meta name="twitter:image"            content="https://m-arbaoui.github.io/watchy/og-image.png">
+  <meta name="twitter:image:alt"        content="Watchy. — Admit One. Unlimited Movies. Unlimited Series.">
+  <meta name="twitter:site" content="@arbw_13">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2309090B'/%3E%3Ctext x='32' y='50' font-family='Georgia%2Cserif' font-size='50' font-weight='300' fill='%23C9A96E' text-anchor='middle'%3EW%3C/text%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='36' fill='%2309090B'/%3E%3Ctext x='90' y='140' font-family='Georgia%2Cserif' font-size='138' font-weight='300' fill='%23C9A96E' text-anchor='middle'%3EW%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Outfit:wght@300;400;500;600&display=swap">
+  <link rel="manifest" href="manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Watchy.">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- INTRO -->
+<div class="intro" id="intro">
+  <div class="intro-word">
+    <div class="intro-big">Watchy<span class="dot">.</span></div>
+    <div class="intro-tag">Cinema without the noise</div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav id="nav">
+  <button id="nav-logo" class="nav-logo" aria-label="Home">
+    <span class="nav-wordmark">Watchy<span class="dot">.</span></span>
+  </button>
+  <div class="nav-links">
+    <button class="nav-link active" data-page="home">Home</button>
+    <button class="nav-link" data-page="movies">Movies</button>
+    <button class="nav-link" data-page="series">Series</button>
+    <button class="nav-link" data-page="discover">Discover</button>
+    <button class="nav-link" data-page="mylist">My List</button>
+  </div>
+  <div class="nav-right">
+<button class="nav-search-btn" id="search-icon-btn" aria-label="Search">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <span class="nav-search-label">Search</span>
+    </button>
+  </div>
+</nav>
+
+<!-- SEARCH OVERLAY -->
+<div class="search-overlay" id="search-overlay" role="dialog" aria-modal="true">
+  <div class="search-overlay-backdrop" id="search-overlay-backdrop"></div>
+  <div class="search-overlay-inner">
+    <div class="search-overlay-bar">
+      <svg class="search-overlay-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="search-overlay-input" class="search-overlay-input" type="text" placeholder="Search movies, series…" autocomplete="off" spellcheck="false">
+      <button class="search-overlay-close" id="search-overlay-close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <!-- Search filters -->
+    <div class="search-filters">
+      <button class="search-filter-btn active" data-f="all">All</button>
+      <button class="search-filter-btn" data-f="movie">Movies</button>
+      <button class="search-filter-btn" data-f="tv">Series</button>
+    </div>
+    <div class="search-count" id="search-result-count"></div>
+    <div class="search-overlay-results" id="search-overlay-results"></div>
+  </div>
+</div>
+
+<!-- MOBILE BOTTOM NAV -->
+<nav class="bot-nav" aria-label="Mobile navigation">
+  <button class="bot-nav-item active" data-page="home">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>Home</span>
+  </button>
+  <button class="bot-nav-item" data-page="movies">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+    <span>Movies</span>
+  </button>
+  <button class="bot-nav-item" data-page="discover">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+    <span>Discover</span>
+  </button>
+  <button class="bot-nav-item" data-page="series">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+    <span>Series</span>
+  </button>
+  <button class="bot-nav-item" data-page="mylist">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    <span>My List</span>
+  </button>
+</nav>
+
+<!-- HOME PAGE -->
+<div id="page-home" class="page">
+  <section id="hero">
+    <div id="hero-bg" class="hero-bg"></div>
+    <div class="hero-content">
+      <div class="hero-eyebrow"><span class="hero-pulse"></span><span id="hero-type">Film</span></div>
+      <p class="hero-greeting" id="hero-greeting"></p>
+      <h1 class="hero-title" id="hero-title">Loading…</h1>
+      <div class="hero-meta">
+        <span id="hero-score"></span>
+        <span class="hero-sep"></span>
+        <span id="hero-year"></span>
+      </div>
+      <p class="hero-overview" id="hero-overview"></p>
+      <div class="hero-actions">
+        <button id="hero-play-btn" class="btn-primary">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Watch Now
+        </button>
+        <button id="hero-info-btn" class="btn-ghost">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>More Info
+        </button>
+      </div>
+    </div>
+    <div class="hero-nav" id="hero-dots"></div>
+  </section>
+  <div class="mood-bar" id="mood-bar"><span class="mood-label">Genre</span></div>
+  <div class="spotlight" id="spotlight">
+    <div class="spotlight-bg" id="spotlight-bg"></div>
+    <div class="spotlight-content">
+      <div class="spotlight-kicker">✦ Editor's Pick</div>
+      <div class="spotlight-title" id="spotlight-title"></div>
+      <div class="spotlight-quote" id="spotlight-quote"></div>
+    </div>
+  </div>
+  <section id="continue-sec" class="section" style="display:none">
+    <div class="section-head">
+      <h2 class="section-title">Continue Watching</h2>
+      <button class="section-clear-btn" id="continue-clear-btn">Clear</button>
+    </div>
+    <div id="rail-continue" class="rail"></div>
+  </section>
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">Trending <span>This Week</span></h2>
+      <button class="section-all" data-goto="movies">See all →</button>
+    </div>
+    <div id="rail-trending" class="rail"></div>
+  </section>
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">Popular Movies</h2>
+      <button class="section-all" data-goto="movies">See all →</button>
+    </div>
+    <div id="rail-movies" class="rail"></div>
+  </section>
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">Popular Series</h2>
+      <button class="section-all" data-goto="series">See all →</button>
+    </div>
+    <div id="rail-tv" class="rail"></div>
+  </section>
+  <section class="section" style="padding-bottom:72px">
+    <div class="section-head"><h2 class="section-title">Top Rated</h2></div>
+    <div id="rail-toprated" class="rail"></div>
+  </section>
+  <footer class="site-footer">
+    <span class="footer-brand">Watchy<span class="dot">.</span></span>
+    <span class="footer-sep">—</span>
+    <a class="footer-credit" href="https://www.instagram.com/arbw_13" target="_blank" rel="noopener">by Mohammed</a>
+  </footer>
+</div>
+
+<!-- MOVIES -->
+<div id="page-movies" class="page">
+  <div class="aux-header"><h1 class="aux-title">Movies</h1><p class="aux-sub">Popular and now playing worldwide</p></div>
+  <div id="movies-grid" class="grid-page"></div>
+<div class="load-more-sentinel" id="movies-sentinel" style="display:none"><div class="load-more-spinner"></div></div>
+</div>
+
+<!-- SERIES -->
+<div id="page-series" class="page">
+  <div class="aux-header"><h1 class="aux-title">Series</h1><p class="aux-sub">Long-form storytelling at its finest</p></div>
+  <div id="series-grid" class="grid-page"></div>
+<div class="load-more-sentinel" id="series-sentinel" style="display:none"><div class="load-more-spinner"></div></div>
+</div>
+
+<!-- MY LIST -->
+<div id="page-mylist" class="page">
+  <div class="aux-header"><h1 class="aux-title">My List</h1><p class="aux-sub">Everything you've saved</p></div>
+  <div id="fav-grid" class="grid-page"></div>
+</div>
+
+<!-- DISCOVER PAGE -->
+<div id="page-discover" class="page">
+  <div class="discover-wrap">
+    <div class="discover-top">
+      <h1 class="discover-heading">Discover</h1>
+      <div class="discover-type-row">
+        <button class="discover-type-btn active" data-t="movie" id="discover-type-movie">Movies</button>
+        <button class="discover-type-btn" data-t="tv" id="discover-type-tv">Series</button>
+      </div>
+    </div>
+    <div class="discover-loading" id="discover-loading" style="display:none">
+      <div class="discover-spinner"></div>
+    </div>
+    <div class="discover-card" id="discover-card">
+      <div class="discover-bg" id="discover-bg"></div>
+      <div class="discover-overlay"></div>
+      <div class="discover-content">
+        <div class="discover-genre-tag" id="discover-genre"></div>
+        <h2 class="discover-title" id="discover-title"></h2>
+        <div class="discover-meta-row">
+          <span id="discover-score"></span>
+          <span class="hero-sep"></span>
+          <span id="discover-year"></span>
+        </div>
+        <p class="discover-overview" id="discover-overview"></p>
+        <div class="discover-actions">
+          <button class="btn-primary" id="discover-watch">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Watch Now
+          </button>
+        </div>
+      </div>
+      <div class="discover-nav">
+        <button class="discover-arrow" id="discover-prev">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <span class="discover-counter" id="discover-counter">1 / 20</span>
+        <button class="discover-arrow" id="discover-next">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+      <div class="discover-hint">Swipe or use ← → keys</div>
+    </div>
+  </div>
+</div>
+
+<!-- TITLE PAGE -->
+<div id="page-title" class="page">
+  <div class="tp-backdrop-wrap">
+    <div class="tp-backdrop" id="tp-backdrop"></div>
+    <div class="tp-backdrop-grad"></div>
+  </div>
+  <div class="tp-body">
+    <button class="tp-back-btn" id="tp-back-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="m15 18-6-6 6-6"/></svg>
+      Back
+    </button>
+    <div class="tp-header">
+      <div class="tp-badges">
+        <span class="tp-type-badge" id="tp-type-badge">Movie</span>
+        <span id="tp-score"></span>
+      </div>
+      <h1 class="tp-title" id="tp-title">Loading…</h1>
+      <div class="tp-meta-row">
+        <span id="tp-year"></span>
+        <span class="hero-sep"></span>
+        <span id="tp-runtime"></span>
+        <span class="hero-sep"></span>
+        <span id="tp-seasons"></span>
+      </div>
+      <div id="tp-genres" class="tp-genres"></div>
+      <p class="tp-overview" id="tp-overview"></p>
+      <div class="tp-actions">
+        <button class="btn-primary" id="tp-watch-btn">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Watch Now
+        </button>
+        <button class="btn-list" id="tp-fav-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l8.84 8.84 8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span>My List</span>
+        </button>
+        <div id="tp-trailer-wrap"></div>
+        <button class="tp-share-btn" id="tp-share-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          Share Card
+        </button>
+      </div><!-- /tp-actions -->
+    </div>
+
+    <!-- Cast -->
+    <section class="tp-section">
+      <h2 class="tp-section-title">Cast</h2>
+      <div class="cast-rail" id="tp-cast-rail"></div>
+    </section>
+
+    <!-- Episodes -->
+    <section class="tp-section" id="tp-eps-section" style="display:none">
+      <h2 class="tp-section-title">Episodes</h2>
+      <div class="season-tabs" id="tp-season-tabs"></div>
+      <div class="ep-list" id="tp-ep-list" style="margin-top:16px"></div>
+    </section>
+
+    <!-- Collection -->
+    <section class="tp-section" id="tp-collection-sec" style="display:none">
+      <h2 class="tp-section-title" id="tp-collection-title">Other Parts</h2>
+      <div class="rail" id="tp-collection-rail"></div>
+    </section>
+
+    <!-- Similar -->
+    <section class="tp-section" id="tp-similar-sec" style="display:none">
+      <h2 class="tp-section-title">More Like This</h2>
+      <div class="rail" id="tp-similar-rail"></div>
+    </section>
+  </div>
+</div>
+
+<!-- PERSON PAGE -->
+<div id="page-person" class="page">
+  <div class="person-wrap">
+    <button class="tp-back-btn" id="person-back-btn" style="margin-bottom:24px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="m15 18-6-6 6-6"/></svg>
+      Back
+    </button>
+    <div class="person-header">
+      <img id="person-img" class="person-img" src="" alt="" style="display:none">
+      <div class="person-info">
+        <div class="person-known" id="person-known"></div>
+        <h1 class="person-name" id="person-name"></h1>
+        <p class="person-bio" id="person-bio"></p>
+      </div>
+    </div>
+    <section class="tp-section">
+      <h2 class="tp-section-title">Known For</h2>
+      <div class="rail" id="person-credits-rail"></div>
+    </section>
+  </div>
+</div>
+
+<!-- PLAYER -->
+<div id="page-player" class="page">
+  <div class="player-topbar">
+    <div class="player-topbar-logo">Watchy<span class="dot">.</span></div>
+    <div class="player-topbar-right">
+      <!-- Server switcher toggle -->
+      <button class="server-toggle-btn" id="server-panel-toggle" title="Switch server">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        <span id="current-server-badge">VidSrc</span>
+      </button>
+      <button class="player-back-btn" id="player-back-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+        Back
+      </button>
+    </div>
+  </div>
+
+  <!-- Server panel -->
+  <div class="server-panel" id="server-panel">
+    <div class="server-panel-head">
+      <span class="server-panel-title">Stream Server</span>
+      <button class="pep-close" id="server-panel-close">✕</button>
+    </div>
+    <div class="server-panel-body">
+      <p class="server-panel-hint">If one server doesn't work, try another.</p>
+      <div class="server-switcher" id="server-switcher"></div>
+    </div>
+  </div>
+
+  <div class="player-embed-wrap" id="player-embed-wrap">
+    <div class="player-loader" id="player-loader"><div class="player-loader-ring"></div></div>
+  </div>
+
+  <div class="auto-next-bar" id="auto-next-bar">
+    <div class="auto-next-label">Up Next</div>
+    <div class="auto-next-ep" id="auto-next-ep"></div>
+    <div class="auto-next-track"><div class="auto-next-fill" id="auto-next-fill"></div></div>
+  </div>
+
+  <button class="player-ep-toggle" id="player-ep-toggle" style="display:none">
+    <svg viewBox="0 0 24 24" fill="currentColor" width="17" height="17"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z"/></svg>
+    Episodes
+  </button>
+
+  <div class="player-ep-panel" id="player-ep-panel">
+    <div class="pep-handle"></div>
+    <div class="pep-head">
+      <div class="pep-title">Episodes</div>
+      <div id="pep-season-tabs"></div>
+      <button class="pep-close" id="pep-close">✕</button>
+    </div>
+    <div class="pep-list" id="pep-list"></div>
+  </div>
+
+  <div class="below-player">
+    <div class="below-row">
+      <div>
+        <div class="below-title" id="below-title">Watchy.</div>
+        <div class="below-meta" id="below-meta"></div>
+      </div>
+    </div>
+
+    <!-- Hidden progress trackers — used by JS internally -->
+    <div style="display:none">
+      <div id="cont-fill"></div>
+      <div id="cont-pct"></div>
+    </div>
+    <section id="collection-sec" class="below-section" style="display:none">
+      <div class="section-head"><h2 class="section-title" id="collection-title">Other Parts</h2></div>
+      <div id="collection-rail" class="rail"></div>
+    </section>
+    <section id="similar-sec" class="below-section" style="display:none">
+      <div class="section-head"><h2 class="section-title" id="similar-title">More Like This</h2></div>
+      <div id="similar-rail" class="rail"></div>
+    </section>
+  </div>
+</div>
+
+<!-- TRAILER MODAL -->
+<div class="trailer-modal" id="trailer-modal">
+  <div class="trailer-backdrop" id="trailer-backdrop"></div>
+  <div class="trailer-frame-wrap">
+    <button class="trailer-close" id="trailer-close">✕</button>
+    <iframe id="trailer-frame" class="trailer-frame" allow="autoplay; fullscreen" allowfullscreen frameborder="0" src=""></iframe>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="js/app.js"></script>
+<script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
+</body>
+</html>
