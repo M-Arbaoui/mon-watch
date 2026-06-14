@@ -58,7 +58,7 @@
     <button class="nav-link" data-page="mylist">My List</button>
   </div>
   <div class="nav-right">
-<button class="nav-search-btn" id="search-icon-btn" aria-label="Search">
+    <button class="nav-search-btn" id="search-icon-btn" aria-label="Search">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <span class="nav-search-label">Search</span>
     </button>
@@ -76,7 +76,6 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
     </div>
-    <!-- Search filters -->
     <div class="search-filters">
       <button class="search-filter-btn active" data-f="all">All</button>
       <button class="search-filter-btn" data-f="movie">Movies</button>
@@ -188,14 +187,14 @@
 <div id="page-movies" class="page">
   <div class="aux-header"><h1 class="aux-title">Movies</h1><p class="aux-sub">Popular and now playing worldwide</p></div>
   <div id="movies-grid" class="grid-page"></div>
-<div class="load-more-sentinel" id="movies-sentinel" style="display:none"><div class="load-more-spinner"></div></div>
+  <div class="load-more-sentinel" id="movies-sentinel" style="display:none"><div class="load-more-spinner"></div></div>
 </div>
 
 <!-- SERIES -->
 <div id="page-series" class="page">
   <div class="aux-header"><h1 class="aux-title">Series</h1><p class="aux-sub">Long-form storytelling at its finest</p></div>
   <div id="series-grid" class="grid-page"></div>
-<div class="load-more-sentinel" id="series-sentinel" style="display:none"><div class="load-more-spinner"></div></div>
+  <div class="load-more-sentinel" id="series-sentinel" style="display:none"><div class="load-more-spinner"></div></div>
 </div>
 
 <!-- MY LIST -->
@@ -274,6 +273,13 @@
         <span id="tp-seasons"></span>
       </div>
       <div id="tp-genres" class="tp-genres"></div>
+
+      <!-- IMDb rating block — populated by JS -->
+      <div id="tp-imdb-block" style="display:none"></div>
+
+      <!-- JustWatch streaming availability — populated by JS -->
+      <div id="tp-justwatch-block" style="display:none"></div>
+
       <p class="tp-overview" id="tp-overview"></p>
       <div class="tp-actions">
         <button class="btn-primary" id="tp-watch-btn">
@@ -349,7 +355,6 @@
   <div class="player-topbar">
     <div class="player-topbar-logo">Watchy<span class="dot">.</span></div>
     <div class="player-topbar-right">
-      <!-- Server switcher toggle -->
       <button class="src-toggle-btn" id="server-panel-toggle" aria-haspopup="true" aria-expanded="false" title="Switch source">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         Sources
@@ -362,7 +367,7 @@
     </div>
   </div>
 
-  <!-- Premium source selector panel -->
+  <!-- Source selector panel -->
   <div class="src-panel" id="src-panel" role="menu" aria-label="Stream sources">
     <div class="src-panel-head">
       <div class="src-panel-title">
@@ -409,8 +414,6 @@
         <div class="below-meta" id="below-meta"></div>
       </div>
     </div>
-
-    <!-- Hidden progress trackers — used by JS internally -->
     <div style="display:none">
       <div id="cont-fill"></div>
       <div id="cont-pct"></div>

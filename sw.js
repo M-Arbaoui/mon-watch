@@ -1,11 +1,11 @@
 /* ═══════════════════════════════════════════════
-   Watchy. — Service Worker
+   Watchy. — Service Worker v2
    Cache-first for app shell
    Network-first for TMDB API
    ═══════════════════════════════════════════════ */
-const CACHE     = 'watchy-shell-v1';
-const API_CACHE = 'watchy-api-v1';
-const IMG_CACHE = 'watchy-img-v1';
+const CACHE     = 'watchy-shell-v2';
+const API_CACHE = 'watchy-api-v2';
+const IMG_CACHE = 'watchy-img-v2';
 
 const SHELL = [
   '/watchy/',
@@ -53,10 +53,12 @@ self.addEventListener('fetch', e => {
   }
 
   /* Stream embeds — network only, never cache */
-  if (['vidsrc.to','vidsrc.xyz','2embed.cc','multiembed.mov','smashy.stream']
-      .some(d => url.hostname.includes(d))) {
-    return;
-  }
+  const EMBED_DOMAINS = [
+    'vidsrc.to','vidsrc.xyz','2embed.cc',
+    'vidking.net','ezvidapi.com','streamdb.dev',
+    'videasy.net','vidnest.online','p-stream.co',
+  ];
+  if (EMBED_DOMAINS.some(d => url.hostname.includes(d))) return;
 
   /* App shell — cache first */
   if (url.hostname === self.location.hostname) {
