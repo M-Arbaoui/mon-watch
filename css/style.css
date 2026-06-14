@@ -1609,3 +1609,163 @@ body{
    ═══════════════════════════════════════════════ */
 .server-panel,.server-panel-head,.server-panel-title,
 .server-panel-body,.server-panel-hint{display:none!important}
+/* ═══════════════════════════════════════════
+   ADDITIONS — append to css/style.css
+   IMDb badge · JustWatch block
+   ═══════════════════════════════════════════ */
+
+/* ── IMDb badge ── */
+#tp-imdb-block { margin: 4px 0 12px; }
+
+.imdb-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(245,197,24,0.07);
+  border: 1px solid rgba(245,197,24,0.18);
+  border-radius: 10px;
+  padding: 10px 16px;
+  flex-wrap: wrap;
+}
+
+.imdb-logo-wrap {
+  display: flex;
+  align-items: center;
+  background: #F5C518;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+.imdb-logo-text {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: #000;
+  letter-spacing: 0.04em;
+}
+
+.imdb-score-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+.imdb-score {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 22px;
+  font-weight: 500;
+  color: #F5C518;
+  line-height: 1;
+}
+.imdb-max {
+  font-size: 12px;
+  color: var(--text3);
+}
+
+.imdb-stars {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+.imdb-star { fill: none; stroke: rgba(245,197,24,0.35); transition: fill .15s; }
+.imdb-star.filled { fill: #F5C518; stroke: #F5C518; }
+
+.imdb-votes {
+  font-size: 12px;
+  color: var(--text3);
+  font-family: 'Outfit', sans-serif;
+}
+.imdb-link {
+  font-size: 11px;
+  color: #F5C518;
+  text-decoration: none;
+  opacity: .7;
+  transition: opacity .15s;
+  font-family: 'Outfit', sans-serif;
+}
+.imdb-link:hover { opacity: 1; text-decoration: underline; }
+
+/* ── JustWatch block ── */
+#tp-justwatch-block { margin: 4px 0 20px; }
+
+.jw-block {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.jw-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.jw-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+}
+.jw-powered {
+  font-size: 10px;
+  color: var(--text3);
+  font-family: 'Outfit', sans-serif;
+  margin-left: auto;
+  opacity: .6;
+}
+
+.jw-group { margin-bottom: 10px; }
+.jw-group:last-child { margin-bottom: 0; }
+.jw-group-label {
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  font-family: 'Outfit', sans-serif;
+  margin-bottom: 8px;
+}
+.jw-logos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.jw-provider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: default;
+}
+.jw-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--card);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform .15s;
+}
+.jw-logo:hover { transform: scale(1.06); }
+.jw-logo-text {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text2);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.jw-name {
+  font-size: 9px;
+  color: var(--text3);
+  font-family: 'Outfit', sans-serif;
+  text-align: center;
+  max-width: 48px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
