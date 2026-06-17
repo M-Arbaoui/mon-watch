@@ -5,7 +5,7 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "theme_color": "#09090B",
   "background_color": "#09090B",
   "lang": "en",
@@ -51,6 +51,13 @@
       "short_name": "Discover",
       "description": "Discover new films and series",
       "url": "./#/discover",
+      "icons": [{"src": "icon-192.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "Franchises",
+      "short_name": "Franchises",
+      "description": "Explore film collections",
+      "url": "./#/franchises",
       "icons": [{"src": "icon-192.png", "sizes": "192x192"}]
     },
     {

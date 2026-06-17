@@ -8,14 +8,14 @@ const API_CACHE = 'watchy-api-v2';
 const IMG_CACHE = 'watchy-img-v2';
 
 const SHELL = [
-  '/watchy/',
-  '/watchy/index.html',
-  '/watchy/css/style.css',
-  '/watchy/js/app.js',
-  '/watchy/og-image.png',
-  '/watchy/manifest.json',
-  '/watchy/icon-192.png',
-  '/watchy/icon-512.png',
+  './',
+  './index.html',
+  './css/style.css',
+  './js/app.js',
+  './og-image.png',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png',
 ];
 
 self.addEventListener('install', e => {
