@@ -7,18 +7,18 @@
   <meta name="description" content="Watchy. — A quiet, cinematic streaming experience.">
   <meta name="theme-color" content="#09090B">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://watchy-dev.vercel.app/">
+  <meta property="og:url" content="https://watchy-pad.vercel.app/">
   <meta property="og:title" content="Watchy.">
-  <meta property="og:description" content="Cinema without the noise.">
+  <meta property="og:description" content="Quiet Cinema.">
   <meta name="twitter:card"             content="summary_large_image">
-  <meta property="og:image"             content="https://watchy-dev.vercel.app/og-image.png">
-  <meta property="og:image:secure_url"  content="https://watchy-dev.vercel.app/og-image.png">
+  <meta property="og:image"             content="https://watchy-pad.vercel.app/og-image.png">
+  <meta property="og:image:secure_url"  content="https://watchy-pad.vercel.app/og-image.png">
   <meta property="og:image:width"       content="1400">
   <meta property="og:image:height"      content="738">
   <meta property="og:image:type"        content="image/png">
   <meta property="og:image:alt"         content="Watchy. — Cinema without the noise.">
-  <meta name="twitter:image"            content="https://watchy-dev.vercel.app/og-image.png">
-  <meta name="twitter:image:alt"        content="Watchy. — Cinema without the noise.">
+  <meta name="twitter:image"            content="https://watchy-pad.vercel.app/og-image.png">
+  <meta name="twitter:image:alt"        content="Watchy. — Quiet Cinema.">
   <meta name="twitter:site" content="@arbw_13">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2309090B'/%3E%3Ctext x='32' y='50' font-family='Georgia%2Cserif' font-size='50' font-weight='300' fill='%23C9A96E' text-anchor='middle'%3EW%3C/text%3E%3C/svg%3E">
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='36' fill='%2309090B'/%3E%3Ctext x='90' y='140' font-family='Georgia%2Cserif' font-size='138' font-weight='300' fill='%23C9A96E' text-anchor='middle'%3EW%3C/text%3E%3C/svg%3E">
@@ -42,7 +42,7 @@
 <div class="intro" id="intro">
   <div class="intro-word">
     <div class="intro-big">Watchy<span class="dot">.</span></div>
-    <div class="intro-tag">Cinema without the noise</div>
+    <div class="intro-tag">Quite Cinema</div>
   </div>
 </div>
 
@@ -224,6 +224,8 @@
     <h1 class="aux-title">Movies</h1>
     <p class="aux-sub">Popular and now playing worldwide</p>
     <div class="grid-filters" id="movies-filters">
+      <div class="filter-chips" id="movies-sort-chips" data-for="movies-sort"></div>
+      <div class="filter-chips filter-chips-scroll" id="movies-genre-chips" data-for="movies-genre"></div>
       <select class="filter-select" id="movies-sort" aria-label="Sort movies">
         <option value="popularity.desc">Popular</option>
         <option value="vote_average.desc">Top Rated</option>
@@ -253,6 +255,8 @@
     <h1 class="aux-title">Series</h1>
     <p class="aux-sub">Long-form storytelling at its finest</p>
     <div class="grid-filters" id="series-filters">
+      <div class="filter-chips" id="series-sort-chips" data-for="series-sort"></div>
+      <div class="filter-chips filter-chips-scroll" id="series-genre-chips" data-for="series-genre"></div>
       <select class="filter-select" id="series-sort" aria-label="Sort series">
         <option value="popularity.desc">Popular</option>
         <option value="vote_average.desc">Top Rated</option>
@@ -344,8 +348,9 @@
         <p class="discover-overview" id="discover-overview"></p>
         <div class="discover-actions">
           <button class="btn-primary" id="discover-watch">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Watch Now
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>More Info
           </button>
+          <button class="btn-ghost" id="discover-skip" type="button">Not Interested</button>
         </div>
       </div>
       <div class="discover-nav">
@@ -357,14 +362,14 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="m9 18 6-6-6-6"/></svg>
         </button>
       </div>
-      <div class="discover-hint">Swipe or use ← → keys</div>
+      <div class="discover-hint">Swipe or use ← → keys · Enter for info</div>
     </div>
   </div>
 </div>
 
 <!-- TITLE PAGE -->
 <div id="page-title" class="page">
-  <div class="tp-backdrop-wrap">
+  <div class="tp-backdrop-wrap" id="tp-backdrop-wrap" title="Double-tap to play">
     <div class="tp-backdrop" id="tp-backdrop"></div>
     <div class="tp-backdrop-grad"></div>
   </div>
@@ -399,6 +404,10 @@
       <div class="tp-actions">
         <button class="btn-primary" id="tp-watch-btn">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Watch Now
+        </button>
+        <button class="btn-ghost" id="tp-restart-btn" style="display:none" type="button">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Start Over
         </button>
         <button class="btn-list" id="tp-fav-btn">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l8.84 8.84 8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>
@@ -587,6 +596,27 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- Card long-press menu -->
+<div class="card-menu" id="card-menu" role="menu" aria-hidden="true">
+  <button class="card-menu-item" data-action="play" role="menuitem">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Play
+  </button>
+  <button class="card-menu-item" data-action="info" role="menuitem">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>More Info
+  </button>
+  <button class="card-menu-item" data-action="fav" role="menuitem">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l8.84 8.84 8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    <span data-fav-label>My List</span>
+  </button>
+  <button class="card-menu-item" data-action="share" role="menuitem">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Share
+  </button>
+  <button class="card-menu-item card-menu-danger" data-action="remove" role="menuitem" style="display:none">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Remove
+  </button>
+</div>
+
 <script src="js/app.js"></script>
 </body>
 </html>
