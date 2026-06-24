@@ -1,7 +1,7 @@
 {
   "name": "Watchy.",
   "short_name": "Watchy",
-  "description": "Cinema without the noise. Unlimited Movies. Unlimited Series.",
+  "description": "A quiet, cinematic streaming experience — movies and series with a Google TV-inspired interface.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -9,7 +9,7 @@
   "theme_color": "#09090B",
   "background_color": "#09090B",
   "lang": "en",
-  "categories": ["entertainment"],
+  "categories": ["entertainment", "video"],
   "icons": [
     {
       "src": "icon-192.png",
@@ -42,22 +42,22 @@
       "sizes": "1400x738",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Watchy. — Cinema without the noise"
+      "label": "Watchy. — Quiet Cinema"
     }
   ],
   "shortcuts": [
     {
       "name": "Discover",
       "short_name": "Discover",
-      "description": "Discover new films and series",
+      "description": "Find your next watch",
       "url": "./#/discover",
       "icons": [{"src": "icon-192.png", "sizes": "192x192"}]
     },
     {
-      "name": "Franchises",
-      "short_name": "Franchises",
-      "description": "Explore film collections",
-      "url": "./#/franchises",
+      "name": "Movies",
+      "short_name": "Movies",
+      "description": "Browse popular movies",
+      "url": "./#/movies",
       "icons": [{"src": "icon-192.png", "sizes": "192x192"}]
     },
     {

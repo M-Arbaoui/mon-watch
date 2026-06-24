@@ -15,16 +15,9 @@ const GENRES=[
   {label:'Documentary',id:'99'},{label:'Crime',id:'80'},
 ];
 
-const FRANCHISES=[
-  {id:86311,name:'Marvel Cinematic Universe'},
-  {id:1241,name:'Harry Potter'},
-  {id:119,name:'The Lord of the Rings'},
-  {id:9485,name:'Fast & Furious'},
-  {id:10,name:'Star Wars'},
-  {id:645,name:'James Bond'},
-];
-
 let GENRE_MAP={};
+const _videoCache={};
+let _cardHoverTimer=null,_cardPreviewCard=null;
 
 /* ── State ── */
 const S={
@@ -42,17 +35,18 @@ const S={
   seriesFilters:{sort:'popularity.desc',genre:'',year:'',lang:''},
   favSort:'added',
   playerItem:null,playerType:null,playerSeason:1,playerEp:1,
-  playerEps:[],playerSeasons:0,nextTimer:null,autoNextShown:false,progressTimer:null,
+  playerEps:[],playerSeasons:0,progressTimer:null,
   searchOpen:false,searchFilter:'all',
-  titleItem:null,titlePrevPage:'home',
-  discoverItems:[],discoverIdx:0,discoverType:'movie',discoverMood:'random',
+  titleItem:null,titlePrevPage:'home',playerReturnPage:'home',
+  discoverItems:[],discoverIdx:0,discoverType:'movie',discoverMood:'random',discoverGenre:null,discoverDir:1,
+  dailyPickId:null,
+  recentSearches:JSON.parse(localStorage.getItem('wt_recent')||'[]'),
   playerOpenTime:0,playerRuntime:0,
-  subLang:localStorage.getItem('wt_sub_lang')||'',
   homeTrending:[],
   hidden:JSON.parse(localStorage.getItem('wt_hide')||'[]'),
   _cardMenuItem:null,
 };
-(()=>{const p=localStorage.getItem('wt_page');if(p&&p!=='player'){S.page=p;S.lastPage=p;}})();
+(()=>{const p=localStorage.getItem('wt_page');if(p&&p!=='player'){S.page=p==='franchises'?'home':p;S.lastPage=S.page;}})();
 
 /* ── Persist ── */
 const save=()=>{
@@ -357,38 +351,170 @@ function fmtRuntime(mins){
   const h=Math.floor(mins/60),m=mins%60;
   return h>0?`${h}h ${m}m`:`${m}m`;
 }
+function allowTrailerAutoplay(){
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return false;
+  if(window.innerWidth<=800)return false;
+  const conn=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
+  if(conn&&(conn.saveData||conn.effectiveType==='slow-2g'||conn.effectiveType==='2g'))return false;
+  return true;
+}
+function ytEmbedUrl(key,{mute=true,loop=true,autoplay=true}={}){
+  const p=new URLSearchParams({
+    autoplay:autoplay?'1':'0',
+    mute:mute?'1':'0',
+    controls:'0',
+    rel:'0',
+    modestbranding:'1',
+    playsinline:'1',
+    enablejsapi:'1',
+  });
+  if(loop)p.set('loop','1'),p.set('playlist',key);
+  return`https://www.youtube.com/embed/${key}?${p}`;
+}
+async function getTrailerKey(id,type){
+  const k=`${type}_${id}`;
+  if(_videoCache[k]!==undefined)return _videoCache[k];
+  const videos=await A.videos(id,type);
+  const trailer=videos.find(v=>v.type==='Trailer'&&v.site==='YouTube')||videos.find(v=>v.site==='YouTube');
+  _videoCache[k]=trailer?.key||null;
+  return _videoCache[k];
+}
+function extractAmbientColor(url,onColor){
+  if(!url){onColor(null);return;}
+  const img=new Image();
+  img.crossOrigin='anonymous';
+  img.onload=()=>{
+    try{
+      const c=document.createElement('canvas');
+      c.width=24;c.height=24;
+      const ctx=c.getContext('2d');
+      ctx.drawImage(img,0,0,24,24);
+      const d=ctx.getImageData(0,0,24,24).data;
+      let r=0,g=0,b=0,n=0;
+      for(let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];b+=d[i+2];n++;}
+      onColor(`rgb(${Math.round(r/n)},${Math.round(g/n)},${Math.round(b/n)})`);
+    }catch(_){onColor(null);}
+  };
+  img.onerror=()=>onColor(null);
+  img.src=url;
+}
+function setAmbientGlow(elProp,url){
+  extractAmbientColor(url,color=>{
+    if(!color)return;
+    const m=color.match(/\d+/g);
+    if(!m)return;
+    document.documentElement.style.setProperty(elProp,`rgba(${m[0]},${m[1]},${m[2]},0.38)`);
+  });
+}
+function stopCardPreview(){
+  clearTimeout(_cardHoverTimer);
+  if(_cardPreviewCard){
+    const prev=_cardPreviewCard.querySelector('.card-preview');
+    if(prev)prev.remove();
+    const img=_cardPreviewCard.querySelector('.card-img');
+    if(img)img.style.opacity='';
+    _cardPreviewCard=null;
+  }
+}
+function bindCardHoverPreview(card,item){
+  if(!allowTrailerAutoplay())return;
+  if(!window.matchMedia('(hover:hover) and (pointer:fine)').matches)return;
+  card.addEventListener('mouseenter',()=>{
+    clearTimeout(_cardHoverTimer);
+    _cardHoverTimer=setTimeout(async()=>{
+      stopCardPreview();
+      _cardPreviewCard=card;
+      const type=mtyp(item);
+      const key=await getTrailerKey(item.id,type);
+      if(!key||_cardPreviewCard!==card)return;
+      const wrap=document.createElement('div');
+      wrap.className='card-preview';
+      wrap.innerHTML=`<iframe src="${ytEmbedUrl(key)}" allow="autoplay; encrypted-media" loading="lazy" title=""></iframe>`;
+      card.querySelector('.card-img-w')?.appendChild(wrap);
+      const img=card.querySelector('.card-img');
+      if(img)img.style.opacity='.15';
+    },420);
+  });
+  card.addEventListener('mouseleave',stopCardPreview);
+}
 
 /* ── Hash routing helpers ── */
-function setHash(path){
-  history.replaceState(null,'',window.location.pathname+'#'+path);
+function clearHash(){
+  if(window.location.hash){
+    history.replaceState(null,'',window.location.pathname+window.location.search);
+  }
+}
+function setHash(path,push=false){
+  const url=window.location.pathname+window.location.search+'#'+path;
+  if(push)history.pushState({watchy:path},'',url);
+  else history.replaceState({watchy:path},'',url);
+}
+function resolvePage(name){
+  if(name&&document.getElementById(`page-${name}`))return name;
+  return'home';
+}
+function goBack(){
+  if(S.page==='player'){
+    const dest=resolvePage(S.playerReturnPage||S.lastPage||'home');
+    stopPlayer();
+    clearHash();
+    goTo(dest,false,true);
+    return;
+  }
+  if(S.page==='person'){
+    if(S.titleItem)goTo('title',false,true);
+    else{clearHash();goTo(resolvePage(S.lastPage||'home'),false,true);}
+    return;
+  }
+  if(S.page==='title'){
+    clearHash();
+    const dest=resolvePage(S.titlePrevPage||'home');
+    if(dest==='person')goTo('person',false,true);
+    else goTo(dest,false,true);
+    return;
+  }
 }
 
 /* ── Routing ── */
 function goTo(name,skipSave=false,restoreScroll=false){
   if(S.page==='player'&&name!=='player')stopPlayer();
   clearToast();closeSearch();
-  if(S.page&&S.page!=='player'&&S.page!=='title'){
+  if(S.page&&S.page!=='player'&&S.page!=='title'&&S.page!=='person'){
     S.scrollPositions[S.page]=window.scrollY;
   }
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById(`page-${name}`)?.classList.add('active');
-  document.querySelectorAll('.nav-link[data-page]').forEach(l=>l.classList.toggle('active',l.dataset.page===name));
-  document.querySelectorAll('.bot-nav-item[data-page]').forEach(l=>l.classList.toggle('active',l.dataset.page===name));
-  const nav=document.getElementById('nav'),bot=document.querySelector('.bot-nav');
-  if(name==='player'){
-    nav.classList.add('hidden');
-    if(bot)bot.style.display='none';
-  }else{
-    nav.classList.remove('hidden');
-    if(bot&&window.innerWidth<=800)bot.style.display='flex';
-  }
-  S.page=name;
-  if(!skipSave)savePage(name);
-  if(restoreScroll&&S.scrollPositions[name]!==undefined){
-    requestAnimationFrame(()=>window.scrollTo(0,S.scrollPositions[name]));
-  }else{
-    window.scrollTo(0,0);
-  }
+  const cur=document.querySelector('.page.active');
+  const next=document.getElementById(`page-${name}`);
+  if(!next){name='home';}
+  const nextEl=document.getElementById(`page-${name}`);
+  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const apply=()=>{
+    document.querySelectorAll('.page').forEach(p=>{
+      p.classList.remove('active','page-exit','page-enter');
+    });
+    nextEl?.classList.add('active');
+    if(!reduced)nextEl?.classList.add('page-enter');
+    document.querySelectorAll('.nav-link[data-page]').forEach(l=>l.classList.toggle('active',l.dataset.page===name));
+    document.querySelectorAll('.bot-nav-item[data-page]').forEach(l=>l.classList.toggle('active',l.dataset.page===name));
+    const nav=document.getElementById('nav'),bot=document.querySelector('.bot-nav');
+    if(name==='player'){
+      nav.classList.add('hidden');
+      if(bot)bot.style.display='none';
+    }else{
+      nav.classList.remove('hidden');
+      if(bot&&window.innerWidth<=800)bot.style.display='flex';
+    }
+    S.page=name;
+    if(!skipSave)savePage(name);
+    if(restoreScroll&&S.scrollPositions[name]!==undefined){
+      requestAnimationFrame(()=>window.scrollTo(0,S.scrollPositions[name]));
+    }else{
+      window.scrollTo(0,0);
+    }
+  };
+  if(cur&&cur!==nextEl&&!reduced){
+    cur.classList.add('page-exit');
+    setTimeout(apply,180);
+  }else apply();
 }
 
 /* ── Toast ── */
@@ -412,6 +538,7 @@ function openSearch(){
   const ov=document.getElementById('search-overlay');
   ov.classList.add('open');
   document.body.style.overflow='hidden';
+  renderRecentSearches();
   setTimeout(()=>document.getElementById('search-overlay-input')?.focus(),200);
 }
 function closeSearch(){
@@ -422,7 +549,35 @@ function closeSearch(){
   const inp=document.getElementById('search-overlay-input');if(inp)inp.value='';
   const grid=document.getElementById('search-overlay-results');if(grid)grid.innerHTML='';
   const countEl=document.getElementById('search-result-count');if(countEl)countEl.textContent='';
+  document.getElementById('search-recent')?.style.setProperty('display','none');
   document.getElementById('search-icon-btn')?.focus();
+}
+function saveRecentSearch(q){
+  const term=q.trim();if(!term||term.length<2)return;
+  S.recentSearches=S.recentSearches.filter(s=>s.toLowerCase()!==term.toLowerCase());
+  S.recentSearches.unshift(term);
+  if(S.recentSearches.length>8)S.recentSearches.pop();
+  localStorage.setItem('wt_recent',JSON.stringify(S.recentSearches));
+}
+function renderRecentSearches(){
+  const box=document.getElementById('search-recent');
+  const list=document.getElementById('search-recent-list');
+  const q=document.getElementById('search-overlay-input')?.value?.trim();
+  if(!box||!list||q)return;
+  if(!S.recentSearches.length){box.style.display='none';return;}
+  box.style.display='block';
+  list.innerHTML='';
+  S.recentSearches.forEach(term=>{
+    const btn=document.createElement('button');
+    btn.type='button';
+    btn.className='search-recent-chip';
+    btn.textContent=term;
+    btn.addEventListener('click',()=>{
+      const inp=document.getElementById('search-overlay-input');
+      if(inp){inp.value=term;handleSearchInput(term);}
+    });
+    list.appendChild(btn);
+  });
 }
 function trapSearchFocus(e){
   if(!S.searchOpen||e.key!=='Tab')return;
@@ -438,11 +593,19 @@ function handleSearchInput(q){
   clearTimeout(_sd);
   const grid=document.getElementById('search-overlay-results');
   const countEl=document.getElementById('search-result-count');
-  if(!q.trim()){if(grid)grid.innerHTML='';if(countEl)countEl.textContent='';return;}
+  const recentBox=document.getElementById('search-recent');
+  if(!q.trim()){
+    if(grid)grid.innerHTML='';
+    if(countEl)countEl.textContent='';
+    renderRecentSearches();
+    return;
+  }
+  if(recentBox)recentBox.style.display='none';
   _sd=setTimeout(async()=>{
     if(grid){grid.innerHTML='';skels(6).forEach(s=>grid.appendChild(s));}
     if(countEl)countEl.textContent='';
     const results=await A.search(q);
+    saveRecentSearch(q);
     if(!grid)return;grid.innerHTML='';
     let filtered=results;
     if(S.searchFilter==='movie')filtered=results.filter(r=>mtyp(r)==='movie');
@@ -492,6 +655,11 @@ function makeCard(item,opts={}){
     badge.textContent=`#${opts.rank}`;
     imgW.appendChild(badge);
   }
+  const gl=genreLabel(item.genre_ids);
+  const badges=document.createElement('div');
+  badges.className='card-badges';
+  badges.innerHTML=`<span class="card-badge-score">${item.vote_average?fmtScore(item.vote_average):''}</span>${gl?`<span class="card-badge-genre">${gl}</span>`:''}`;
+  imgW.appendChild(badges);
   const ov=document.createElement('div');ov.className='card-ov';
   ov.innerHTML=`<div class="card-play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>`;
   imgW.appendChild(ov);
@@ -506,9 +674,8 @@ function makeCard(item,opts={}){
     imgW.appendChild(ring);
   }
   wrap.appendChild(imgW);
-  const gl=genreLabel(item.genre_ids);
   const info=document.createElement('div');info.className='card-info';
-  info.innerHTML=`<div class="card-title">${t}</div><div class="card-meta">${y}${gl?` · <span class="card-genre">${gl}</span>`:''}${type==='tv'?' · Series':''}</div>`;
+  info.innerHTML=`<div class="card-title">${t}</div><div class="card-meta">${y}${type==='tv'?' · Series':''}</div>`;
   wrap.appendChild(info);
   wrap.addEventListener('click',e=>{if(e.target.closest('.card-fav'))return;closeSearch();openTitlePage(item);});
   favBtn.addEventListener('click',e=>{
@@ -518,6 +685,7 @@ function makeCard(item,opts={}){
     favBtn.querySelector('svg').setAttribute('fill',now?'currentColor':'none');
   });
   bindCardLongPress(wrap,item,opts);
+  bindCardHoverPreview(wrap,item);
   return wrap;
 }
 const skels=(n=8)=>Array.from({length:n},()=>{const d=document.createElement('div');d.className='card-sk';return d;});
@@ -554,9 +722,34 @@ function initInfiniteScroll(sentinelId,onLoad){
   const obs=new IntersectionObserver(entries=>{if(entries[0].isIntersecting)onLoad();},{rootMargin:'200px'});
   obs.observe(sentinel);return obs;
 }
-const emptyHTML=(h,p)=>`<div class="empty"><div class="empty-icon">◻</div><div class="empty-h">${h}</div><div class="empty-p">${p}</div></div>`;
+const emptyHTML=(h,p,action=null)=>{
+  const btn=action?`<button class="empty-action" type="button" data-empty-goto="${action.goto}">${action.label}</button>`:'';
+  return`<div class="empty"><div class="empty-icon">◻</div><div class="empty-h">${h}</div><div class="empty-p">${p}</div>${btn}</div>`;
+};
+function bindEmptyActions(root){
+  root?.querySelectorAll('[data-empty-goto]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const p=btn.dataset.emptyGoto;
+      if(p)document.querySelector(`[data-page="${p}"]`)?.click()||document.querySelector(`.bot-nav-item[data-page="${p}"]`)?.click();
+    });
+  });
+}
 
 /* ── Hero ── */
+function setHeroVideo(key){
+  const wrap=document.getElementById('hero-video');
+  const bg=document.getElementById('hero-bg');
+  if(!wrap)return;
+  if(!key||!allowTrailerAutoplay()){
+    wrap.classList.remove('active');
+    wrap.innerHTML='';
+    bg?.classList.remove('has-video');
+    return;
+  }
+  wrap.innerHTML=`<iframe src="${ytEmbedUrl(key)}" allow="autoplay; encrypted-media" title=""></iframe>`;
+  wrap.classList.add('active');
+  bg?.classList.add('has-video');
+}
 function setHeroBg(url){
   const cur=document.getElementById('hero-bg');
   const next=document.getElementById('hero-bg-next');
@@ -571,19 +764,32 @@ function setHeroBg(url){
     cur.style.opacity='1';
     next.style.opacity='0';
   },800);
+  setAmbientGlow('--hero-glow',bg);
 }
-function renderHero(item){
+async function renderHero(item){
   setHeroBg(item.backdrop_path?imgB(item.backdrop_path):null);
+  const type=mtyp(item);
+  const key=await getTrailerKey(item.id,type);
+  setHeroVideo(key);
   document.getElementById('hero-greeting').textContent=greeting();
   document.getElementById('hero-title').textContent=ttl(item);
-  document.getElementById('hero-type').textContent=mtyp(item)==='tv'?'Series':'Film';
+  document.getElementById('hero-type').textContent=type==='tv'?'Series':'Film';
   document.getElementById('hero-year').textContent=yr(item);
   document.getElementById('hero-score').innerHTML=fmtScore(item.vote_average);
   document.getElementById('hero-overview').textContent=(item.overview||'').slice(0,200)+((item.overview?.length||0)>200?'…':'');
+  const dailyBadge=document.getElementById('hero-daily-badge');
+  if(dailyBadge)dailyBadge.style.display=item.id===S.dailyPickId?'inline':'none';
   document.querySelectorAll('.hero-dot').forEach((d,i)=>d.classList.toggle('active',i===S.heroIdx));
 }
 function setupHero(items){
-  S.heroItems=items.slice(0,7);S.heroIdx=0;renderHero(S.heroItems[0]);
+  const daily=pickDaily(items);
+  S.dailyPickId=daily?.id||null;
+  let pool=[...items];
+  if(daily){
+    pool=pool.filter(i=>i.id!==daily.id);
+    pool.unshift(daily);
+  }
+  S.heroItems=pool.slice(0,7);S.heroIdx=0;renderHero(S.heroItems[0]);
   const dw=document.getElementById('hero-dots');dw.innerHTML='';
   S.heroItems.forEach((_,i)=>{
     const d=document.createElement('button');
@@ -613,15 +819,18 @@ function startHeroTimer(){
     renderHero(S.heroItems[S.heroIdx]);
   },7000);
 }
-function renderDailyPick(item){
-  if(!item)return;
-  const bg=imgB(item.backdrop_path);
-  if(bg)document.getElementById('daily-pick-bg').style.backgroundImage=`url(${bg})`;
-  document.getElementById('daily-pick-title').textContent=ttl(item);
-  document.getElementById('daily-pick-quote').textContent=(item.overview||'').slice(0,110)+'…';
-  document.getElementById('daily-pick').onclick=()=>openTitlePage(item);
+function renderDiscoverVideo(key){
+  const vidWrap=document.getElementById('discover-video');
+  if(!vidWrap)return;
+  if(!key||!allowTrailerAutoplay()){
+    vidWrap.classList.remove('active');
+    vidWrap.innerHTML='';
+    return;
+  }
+  vidWrap.innerHTML=`<iframe src="${ytEmbedUrl(key)}" allow="autoplay; encrypted-media" title=""></iframe>`;
+  vidWrap.classList.add('active');
 }
-function refreshHomeRails(){
+async function refreshHomeRails(){
   const g=S.genre;
   const filter=i=>!g||i.genre_ids?.includes(parseInt(g));
   fillRail(document.getElementById('rail-trending'),()=>A.trending().then(r=>r.filter(filter)),{ranked:true});
@@ -630,6 +839,44 @@ function refreshHomeRails(){
   fillRail(document.getElementById('rail-toprated'),()=>A.topRated().then(r=>r.filter(filter)));
   fillRail(document.getElementById('rail-nowplaying'),()=>A.nowPlaying().then(r=>r.filter(filter)));
   fillRail(document.getElementById('rail-upcoming'),()=>A.upcoming().then(r=>r.filter(filter)));
+}
+async function refreshHomeContent(){
+  const trending=await A.trending();
+  S.homeTrending=trending;
+  if(trending.length)setupHero(trending);
+  refreshContRow();
+  refreshViewedRow();
+  await refreshHomeRails();
+  loadBecauseRail();
+  showToast('Home refreshed');
+}
+function initHomePullRefresh(){
+  const home=document.getElementById('page-home');if(!home)return;
+  const hint=document.getElementById('home-pull-hint');
+  let sy=0,pulling=false,refreshing=false;
+  home.addEventListener('touchstart',e=>{
+    if(S.page!=='home'||refreshing||window.scrollY>8)return;
+    sy=e.touches[0].clientY;pulling=true;
+  },{passive:true});
+  home.addEventListener('touchmove',e=>{
+    if(!pulling||refreshing)return;
+    const dy=e.touches[0].clientY-sy;
+    if(dy>0&&window.scrollY<=0){
+      hint?.classList.toggle('visible',dy>55);
+      hint?.classList.toggle('ready',dy>90);
+    }
+  },{passive:true});
+  home.addEventListener('touchend',async e=>{
+    if(!pulling)return;pulling=false;
+    const dy=e.changedTouches[0].clientY-sy;
+    if(dy>90&&!refreshing&&S.page==='home'){
+      refreshing=true;
+      hint?.classList.add('loading');
+      await refreshHomeContent();
+      hint?.classList.remove('visible','ready','loading');
+      refreshing=false;
+    }else hint?.classList.remove('visible','ready');
+  },{passive:true});
 }
 function setupGenres(){
   const bar=document.getElementById('mood-bar');if(!bar)return;
@@ -664,10 +911,7 @@ async function loadBecauseRail(){
 async function loadHome(){
   const trending=await A.trending();
   S.homeTrending=trending;
-  if(trending.length){
-    setupHero(trending);
-    renderDailyPick(pickDaily(trending));
-  }
+  if(trending.length)setupHero(trending);
   refreshContRow();
   refreshViewedRow();
   refreshHomeRails();
@@ -743,7 +987,11 @@ function sortFavs(list){
 }
 function refreshFavPage(){
   const grid=document.getElementById('fav-grid');if(!grid)return;
-  if(!S.favs.length){grid.innerHTML=emptyHTML("Your list is empty.","Save something worth returning to.");return;}
+  if(!S.favs.length){
+    grid.innerHTML=emptyHTML('Your list is empty.','Save something worth returning to.',{goto:'discover',label:'Discover something'});
+    bindEmptyActions(grid);
+    return;
+  }
   grid.innerHTML='';
   sortFavs(S.favs).forEach((item)=>{
     const wrap=document.createElement('div');
@@ -821,18 +1069,72 @@ function parseWatchProviders(watchData){
   return out;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   TITLE PAGE — TMDB rating + JustWatch
-   ══════════════════════════════════════════════════════════════ */
+function showTitleSkeleton(on){
+  const sk=document.getElementById('tp-skeleton');
+  const layout=document.getElementById('tp-hero-layout');
+  if(!sk)return;
+  sk.style.display=on?'block':'none';
+  if(layout)layout.style.visibility=on?'hidden':'visible';
+}
+function openPosterLightbox(src,alt){
+  const lb=document.getElementById('poster-lightbox');
+  const img=document.getElementById('poster-lightbox-img');
+  if(!lb||!img||!src)return;
+  img.src=src;img.alt=alt||'';
+  lb.classList.add('open');
+}
+function closePosterLightbox(){
+  document.getElementById('poster-lightbox')?.classList.remove('open');
+}
+async function renderTitleUpNext(item,details){
+  const sec=document.getElementById('tp-upnext-sec');
+  const card=document.getElementById('tp-upnext-card');
+  if(!sec||!card)return;
+  sec.style.display='none';
+  card.innerHTML='';
+  if(mtyp(item)!=='tv'||!details?.number_of_seasons)return;
+  const last=getLastEp(item.id);
+  const season=last?.season||1;
+  const data=await A.season(item.id,season);
+  const eps=data?.episodes||[];
+  if(!eps.length)return;
+  const curEp=last?.episode||1;
+  const idx=eps.findIndex(e=>e.episode_number===curEp);
+  const next=idx>=0&&idx<eps.length-1?eps[idx+1]:null;
+  if(!next)return;
+  const still=next.still_path?`${TMDB_IMG}/w300${next.still_path}`:null;
+  const pct=getProg(item.id,'tv',season,next.episode_number);
+  card.innerHTML=`
+    ${still?`<img class="tp-upnext-still" src="${still}" alt="" loading="lazy">`:`<div class="tp-upnext-still tp-upnext-ph"></div>`}
+    <div class="tp-upnext-info">
+      <div class="tp-upnext-label">Season ${season} · Episode ${next.episode_number}</div>
+      <div class="tp-upnext-name">${next.name||'Episode '+next.episode_number}</div>
+      ${next.overview?`<div class="tp-upnext-desc">${next.overview.slice(0,100)}${next.overview.length>100?'…':''}</div>`:''}
+      ${pct>0?`<div class="ep-prog-bar"><div class="ep-prog-fill" style="width:${pct}%"></div></div>`:''}
+    </div>
+    <button class="btn-primary tp-upnext-play" type="button">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M8 5v14l11-7z"/></svg>Play
+    </button>`;
+  card.querySelector('.tp-upnext-play')?.addEventListener('click',()=>{
+    haptic();
+    openPlayer(item,'tv',season,next.episode_number,next.name);
+  });
+  sec.style.display='block';
+}
 async function openTitlePage(item){
   S.titleItem = item;
   addViewed(item);
-  const cameFrom = S.page === 'title' ? S.lastPage : S.page;
-  S.titlePrevPage = cameFrom;
+  if(S.page==='person'){
+    S.titlePrevPage='person';
+  }else if(S.page!=='title'){
+    S.titlePrevPage=S.page;
+  }
 
   const type = mtyp(item);
-  setHash(`/title/${type}/${item.id}`);
+  const hashPath=`/title/${type}/${item.id}`;
+  setHash(hashPath,S.page!=='title');
   goTo('title');
+  showTitleSkeleton(true);
 
   const errEl=document.getElementById('tp-error');
   if(errEl){errEl.style.display='none';errEl.textContent='';}
@@ -840,6 +1142,12 @@ async function openTitlePage(item){
   const tp = document.getElementById('tp-backdrop');
   tp.classList.remove('loaded');
   tp.style.backgroundImage = '';
+
+  const posterEl=document.getElementById('tp-poster');
+  if(posterEl){
+    if(item.poster_path){posterEl.src=imgP(item.poster_path);posterEl.style.display='block';}
+    else posterEl.style.display='none';
+  }
 
   const bgUrl = imgB(item.backdrop_path);
   if(bgUrl){
@@ -849,6 +1157,7 @@ async function openTitlePage(item){
       requestAnimationFrame(()=>tp.classList.add('loaded'));
     };
     img.src = bgUrl;
+    setAmbientGlow('--tp-glow',bgUrl);
   }
 
   document.getElementById('tp-title').textContent    = ttl(item);
@@ -864,6 +1173,7 @@ async function openTitlePage(item){
   document.getElementById('tp-eps-section').style.display     = 'none';
   document.getElementById('tp-collection-sec').style.display  = 'none';
   document.getElementById('tp-similar-sec').style.display     = 'none';
+  document.getElementById('tp-upnext-sec').style.display='none';
   const ratingBlock = document.getElementById('tp-rating-block');
   const jwBlock   = document.getElementById('tp-justwatch-block');
   if(ratingBlock) ratingBlock.style.display = 'none';
@@ -881,6 +1191,7 @@ async function openTitlePage(item){
   updateTitleWatchButtons(item,type);
 
   const details = await A.details(item.id, type);
+  showTitleSkeleton(false);
   if(!details){
     if(errEl){
       errEl.textContent='Could not load details. Check your connection and try again.';
@@ -960,6 +1271,7 @@ async function openTitlePage(item){
     const epSec = document.getElementById('tp-eps-section');
     epSec.style.display = 'block';
     buildTitlePageSeasons(item, details.number_of_seasons);
+    await renderTitleUpNext(item,details);
   }
 
   // ── Collection ──
@@ -1135,51 +1447,126 @@ async function openPersonPage(id){
 
 /* ── Discover ── */
 function discoverQueryParams(mood,type){
+  let p;
   switch(mood){
-    case 'light':return{with_genres:type==='movie'?'35|10751':'35',sort_by:'popularity.desc'};
-    case 'short':return{'with_runtime.lte':'90',sort_by:'vote_average.desc','vote_count.gte':'100'};
-    case 'gems':return{sort_by:'vote_average.desc','vote_count.gte':'50','vote_count.lte':'800','vote_average.gte':'7'};
-    case 'epic':return{'with_runtime.gte':'150',sort_by:'popularity.desc'};
-    default:return{sort_by:'vote_average.desc','vote_count.gte':type==='movie'?'500':'200'};
+    case 'light':p={with_genres:type==='movie'?'35|10751':'35',sort_by:'popularity.desc'};break;
+    case 'short':p={'with_runtime.lte':'90',sort_by:'vote_average.desc','vote_count.gte':'100'};break;
+    case 'gems':p={sort_by:'vote_average.desc','vote_count.gte':'50','vote_count.lte':'800','vote_average.gte':'7'};break;
+    case 'epic':p={'with_runtime.gte':'150',sort_by:'popularity.desc'};break;
+    case 'trending':p={sort_by:'popularity.desc'};break;
+    default:p={sort_by:'vote_average.desc','vote_count.gte':type==='movie'?'500':'200'};
   }
+  if(S.discoverGenre)p.with_genres=S.discoverGenre;
+  return p;
+}
+function setupDiscoverGenres(){
+  const bar=document.getElementById('discover-genres');if(!bar)return;
+  bar.innerHTML='';
+  const allBtn=document.createElement('button');
+  allBtn.type='button';
+  allBtn.className=`mood-chip${!S.discoverGenre?' active':''}`;
+  allBtn.textContent='All Genres';
+  allBtn.addEventListener('click',()=>{
+    S.discoverGenre=null;
+    bar.querySelectorAll('.mood-chip').forEach(c=>c.classList.remove('active'));
+    allBtn.classList.add('active');
+    initDiscover();
+  });
+  bar.appendChild(allBtn);
+  GENRES.filter(g=>g.id).forEach(g=>{
+    const btn=document.createElement('button');
+    btn.type='button';
+    btn.className=`mood-chip${S.discoverGenre===g.id?' active':''}`;
+    btn.textContent=g.label;
+    btn.addEventListener('click',()=>{
+      S.discoverGenre=g.id;
+      bar.querySelectorAll('.mood-chip').forEach(c=>c.classList.remove('active'));
+      btn.classList.add('active');
+      initDiscover();
+    });
+    bar.appendChild(btn);
+  });
 }
 async function initDiscover(){
   document.getElementById('discover-loading').style.display='flex';
-  document.getElementById('discover-card').style.display='none';
+  document.getElementById('discover-stage').style.display='none';
   const page=Math.floor(Math.random()*12)+1;
   const params=discoverQueryParams(S.discoverMood,S.discoverType);
   const items=await A.discoverFiltered(S.discoverType,params,page);
   S.discoverItems=items.filter(i=>i.backdrop_path&&!isHidden(i.id));
   S.discoverIdx=0;
   document.getElementById('discover-loading').style.display='none';
-  document.getElementById('discover-card').style.display='block';
+  document.getElementById('discover-stage').style.display='flex';
   renderDiscover();
 }
-function renderDiscover(){
+async function renderDiscover(){
   if(!S.discoverItems.length)return;
   const item=S.discoverItems[S.discoverIdx];
+  const type=S.discoverType;
   const bg=imgB(item.backdrop_path);
-  const el=document.getElementById('discover-bg');
-  if(bg)el.style.backgroundImage=`url(${bg})`;
+  const cur=document.getElementById('discover-bg');
+  const next=document.getElementById('discover-bg-next');
+  if(bg&&cur){
+    if(next&&cur.style.backgroundImage){
+      next.style.backgroundImage=`url(${bg})`;
+      next.style.opacity='1';
+      setTimeout(()=>{cur.style.backgroundImage=`url(${bg})`;next.style.opacity='0';},50);
+    }else cur.style.backgroundImage=`url(${bg})`;
+    setAmbientGlow('--disc-glow',bg);
+  }
+  const poster=document.getElementById('discover-poster');
+  if(poster){
+    if(item.poster_path){poster.src=imgP(item.poster_path);poster.alt=ttl(item);}
+    else poster.removeAttribute('src');
+  }
+  const vidWrap=document.getElementById('discover-video');
+  if(vidWrap){
+    const key=await getTrailerKey(item.id,type);
+    renderDiscoverVideo(key);
+  }
   document.getElementById('discover-title').textContent=ttl(item);
   document.getElementById('discover-year').textContent=yr(item);
   document.getElementById('discover-score').innerHTML=fmtScore(item.vote_average);
-  document.getElementById('discover-overview').textContent=(item.overview||'').slice(0,160)+((item.overview?.length||0)>160?'…':'');
+  document.getElementById('discover-overview').textContent=(item.overview||'').slice(0,180)+((item.overview?.length||0)>180?'…':'');
   const gl=genreLabel(item.genre_ids);
   document.getElementById('discover-genre').textContent=gl;
   document.getElementById('discover-counter').textContent=`${S.discoverIdx+1} / ${S.discoverItems.length}`;
+  const rtEl=document.getElementById('discover-runtime');
+  if(rtEl)rtEl.textContent=item.runtime?fmtRuntime(item.runtime):'';
+  const favBtn=document.getElementById('discover-fav');
+  if(favBtn){
+    favBtn.classList.toggle('active',isFav(item.id));
+    favBtn.querySelector('span').textContent=isFav(item.id)?'In My List':'My List';
+    favBtn.onclick=()=>{
+      const now=toggleFav(item);
+      favBtn.classList.toggle('active',now);
+      favBtn.querySelector('span').textContent=now?'In My List':'My List';
+    };
+  }
+  const card=document.getElementById('discover-card');
+  if(card){
+    card.classList.remove('slide-left','slide-right');
+    void card.offsetWidth;
+    card.classList.add(S.discoverDir>0?'slide-left':'slide-right');
+  }
 }
 function discoverNext(){
+  S.discoverDir=1;
   if(S.discoverIdx<S.discoverItems.length-1)S.discoverIdx++;else S.discoverIdx=0;
   renderDiscover();
 }
 function discoverPrev(){
+  S.discoverDir=-1;
   if(S.discoverIdx>0)S.discoverIdx--;else S.discoverIdx=S.discoverItems.length-1;
   renderDiscover();
 }
 function discoverWatch(){
   if(!S.discoverItems.length)return;
   openTitlePage(S.discoverItems[S.discoverIdx]);
+}
+function discoverPlay(){
+  if(!S.discoverItems.length)return;
+  playItem(S.discoverItems[S.discoverIdx]);
 }
 function discoverSkip(){
   if(!S.discoverItems.length)return;
@@ -1200,37 +1587,6 @@ function initDiscoverSwipe(){
     const dx=e.changedTouches[0].clientX-_touchX;
     if(Math.abs(dx)>50){dx<0?discoverNext():discoverPrev();}
   },{passive:true});
-}
-
-/* ── Franchises ── */
-function initFranchises(){
-  const list=document.getElementById('franchise-list');if(!list)return;
-  list.innerHTML='';
-  document.getElementById('franchise-detail').style.display='none';
-  list.style.display='grid';
-  FRANCHISES.forEach(f=>{
-    const btn=document.createElement('button');
-    btn.className='franchise-card';
-    btn.innerHTML=`<span class="franchise-card-name">${f.name}</span><span class="franchise-card-arr">→</span>`;
-    btn.addEventListener('click',()=>openFranchise(f));
-    list.appendChild(btn);
-  });
-}
-async function openFranchise(f){
-  const list=document.getElementById('franchise-list');
-  const detail=document.getElementById('franchise-detail');
-  const rail=document.getElementById('franchise-rail');
-  const title=document.getElementById('franchise-detail-title');
-  if(!rail||!detail)return;
-  list.style.display='none';
-  detail.style.display='block';
-  title.textContent=f.name;
-  rail.innerHTML='';skels(8).forEach(s=>rail.appendChild(s));
-  const data=await api(`/collection/${f.id}`);
-  const parts=(data?.parts||[]).sort((a,b)=>(a.release_date||a.first_air_date||'').localeCompare(b.release_date||b.first_air_date||''));
-  rail.innerHTML='';
-  if(!parts.length){rail.innerHTML=emptyHTML('Empty collection','No titles found for this franchise.');return;}
-  parts.forEach(p=>{p.media_type=p.media_type||'movie';rail.appendChild(makeCard(p));});
 }
 
 /* ── Grid filters ── */
@@ -1276,6 +1632,7 @@ function bindGridFilters(type){
 
 /* ── Player ── */
 async function openPlayer(item,type,season=1,ep=1,epName=''){
+  if(S.page!=='player')S.playerReturnPage=S.page;
   S.playerItem=item;S.playerType=type;S.playerSeason=season;S.playerEp=ep;
   addHist({...item,media_type:type});
   addViewed({...item,media_type:type});
@@ -1290,8 +1647,6 @@ async function openPlayer(item,type,season=1,ep=1,epName=''){
   const details=await A.details(item.id,type);
   S.playerRuntime=(details?.runtime||details?.episode_run_time?.[0]||45)*60*1000;
   loadVidSrc(item.id,type,season,ep);
-  const tog=document.getElementById('player-ep-toggle');
-  if(tog)tog.style.display=type==='tv'?'flex':'none';
   if(type==='tv'){
     const data=await A.season(item.id,season);
     S.playerEps=data?.episodes||[];
@@ -1305,24 +1660,40 @@ async function openPlayer(item,type,season=1,ep=1,epName=''){
     const det=await A.details(item.id,'movie');
     loadBelowContent(item,type,det);
   }
-  cancelAutoNext();
+  updatePlayerNav();
   startProgressWatch();
+}
+
+function updatePlayerNav(){
+  const bar=document.getElementById('player-nav-bar');
+  const prevBtn=document.getElementById('player-prev-ep');
+  const nextBtn=document.getElementById('player-next-ep');
+  const epBtn=document.getElementById('player-episodes-btn');
+  const epToggle=document.getElementById('player-ep-toggle');
+  if(!bar)return;
+  if(S.playerType!=='tv'){
+    bar.style.display='none';
+    if(epToggle)epToggle.style.display='none';
+    return;
+  }
+  bar.style.display='flex';
+  if(epToggle)epToggle.style.display='none';
+  const cur=S.playerEps.findIndex(e=>e.episode_number===S.playerEp);
+  if(prevBtn)prevBtn.disabled=cur<=0;
+  if(nextBtn)nextBtn.disabled=cur===-1||cur===S.playerEps.length-1;
 }
 
 function startProgressWatch(){
   clearInterval(S.progressTimer);
-  S.autoNextShown=false;
   S.progressTimer=setInterval(()=>{
-    if(S.page!=='player'||S.playerType!=='tv'||!S.playerOpenTime||!S.playerRuntime||S.autoNextShown)return;
+    if(S.page!=='player'||!S.playerOpenTime||!S.playerRuntime)return;
     const elapsed=Date.now()-S.playerOpenTime;
-    if(elapsed/S.playerRuntime>0.88)triggerAutoNext();
-  },12000);
-}
-
-function withSubs(url){
-  if(!S.subLang)return url;
-  const sep=url.includes('?')?'&':'?';
-  return `${url}${sep}sub_lang=${encodeURIComponent(S.subLang)}`;
+    const pct=Math.min(Math.round((elapsed/S.playerRuntime)*100),99);
+    if(pct>2){
+      document.getElementById('cont-fill').style.width=pct+'%';
+      document.getElementById('cont-pct').textContent=pct+'%';
+    }
+  },15000);
 }
 
 function loadVidSrc(id,type,season,ep){
@@ -1341,10 +1712,10 @@ function stopPlayer(){
   }
   const iframe=document.getElementById('vidsrc-iframe');
   if(iframe){iframe.src='about:blank';iframe.remove();}
-  cancelAutoNext();
   clearInterval(S.progressTimer);
   document.getElementById('player-ep-panel')?.classList.remove('open');
-  S.playerSeasons=0;S.playerOpenTime=0;S.autoNextShown=false;
+  document.getElementById('player-nav-bar').style.display='none';
+  S.playerSeasons=0;S.playerOpenTime=0;
 }
 
 async function loadBelowContent(item,type,details){
@@ -1416,26 +1787,6 @@ function renderEps(container){
     container.appendChild(row);
   });
 }
-function triggerAutoNext(){
-  if(S.playerType!=='tv'||S.autoNextShown)return;
-  const cur=S.playerEps.findIndex(e=>e.episode_number===S.playerEp);
-  if(cur===-1||cur===S.playerEps.length-1)return;
-  S.autoNextShown=true;
-  const next=S.playerEps[cur+1];
-  const bar=document.getElementById('auto-next-bar'),lbl=document.getElementById('auto-next-ep');
-  if(!bar||!lbl)return;
-  lbl.textContent=`E${next.episode_number} — ${next.name||'Episode '+next.episode_number}`;
-  bar.classList.add('visible');
-  const fill=document.getElementById('auto-next-fill');
-  fill.style.transition='none';fill.style.width='100%';
-  requestAnimationFrame(()=>{fill.style.transition='width 5s linear';fill.style.width='0%';});
-  S.nextTimer=setTimeout(()=>{bar.classList.remove('visible');openPlayer(S.playerItem,'tv',S.playerSeason,next.episode_number,next.name);},5000);
-}
-const cancelAutoNext=()=>{
-  clearTimeout(S.nextTimer);
-  S.autoNextShown=false;
-  document.getElementById('auto-next-bar')?.classList.remove('visible');
-};
 function nextEpisode(){
   const cur=S.playerEps.findIndex(e=>e.episode_number===S.playerEp);
   if(S.playerType!=='tv'||cur===-1||cur===S.playerEps.length-1){showToast('End of season');return;}
@@ -1459,12 +1810,18 @@ function initKeyboard(){
     if(S.page==='player'){
       if(e.code==='KeyN'){e.preventDefault();nextEpisode();}
       if(e.code==='KeyP'){e.preventDefault();prevEpisode();}
-      if(e.code==='Escape'){cancelAutoNext();document.getElementById('player-ep-panel')?.classList.remove('open');}
+      if(e.code==='Escape')document.getElementById('player-ep-panel')?.classList.remove('open');
+    }
+    if(S.page==='title'||S.page==='person'){
+      if(e.key==='Escape'&&!S.searchOpen){
+      if(document.getElementById('poster-lightbox')?.classList.contains('open')){closePosterLightbox();return;}
+      e.preventDefault();goBack();
+    }
     }
     if(S.page==='discover'){
       if(e.code==='ArrowRight')discoverNext();
       if(e.code==='ArrowLeft')discoverPrev();
-      if(e.code==='Enter')discoverWatch();
+      if(e.code==='Enter')discoverPlay();
     }
     if(e.key==='Escape'&&S.searchOpen)closeSearch();
   });
@@ -1534,7 +1891,6 @@ function loadVidSrcWithServer(id,type,season,ep){
   if(loader)loader.classList.add('on');
   const srv=getCurrentServer();
   let url=type==='movie'?srv.movie(id):srv.tv(id,season,ep);
-  url=withSubs(url);
   const iframe=document.createElement('iframe');
   iframe.id='vidsrc-iframe';
   iframe.setAttribute('allowfullscreen','');
@@ -1585,7 +1941,6 @@ function startHomeRefresh(){
       const newIdx=Math.floor(Math.random()*Math.min(trending.length,10));
       const shuffled=[...trending.slice(newIdx),...trending.slice(0,newIdx)];
       setupHero(shuffled);
-      renderDailyPick(pickDaily(shuffled));
     }
     refreshHomeRails();
   },5*60*1000);
@@ -1604,18 +1959,18 @@ async function routeFromHash(){
   if(section==='title'&&typeOrId&&id){
     try{
       const data=await api(`/${typeOrId}/${id}`);
-      if(data){data.media_type=typeOrId;setTimeout(()=>openTitlePage(data),400);}
+      if(data){data.media_type=typeOrId;setTimeout(()=>{if(S.page!=='title')S.titlePrevPage=S.page||'home';openTitlePage(data);},400);}
     }catch(_){}
     return;
   }
   if((section==='movie'||section==='tv')&&typeOrId&&!isNaN(typeOrId)){
     try{
       const data=await api(`/${section}/${typeOrId}`);
-      if(data){data.media_type=section;setTimeout(()=>openTitlePage(data),400);}
+      if(data){data.media_type=section;setTimeout(()=>{if(S.page!=='title')S.titlePrevPage=S.page||'home';openTitlePage(data);},400);}
     }catch(_){}
     return;
   }
-  if(['discover','mylist','movies','series','franchises'].includes(section)){
+  if(['discover','mylist','movies','series'].includes(section)){
     setTimeout(()=>document.querySelector(`[data-page="${section}"]`)?.click(),300);
   }
 }
@@ -1702,7 +2057,10 @@ function wrapText(ctx,text,maxW){
   if(cur)lines.push(cur);return lines;
 }
 function copyTitleLink(){
-  const url=window.location.href;
+  const item=S.titleItem;
+  const url=item
+    ?`${window.location.origin}${window.location.pathname}#/title/${mtyp(item)}/${item.id}`
+    :window.location.href;
   if(navigator.clipboard){navigator.clipboard.writeText(url).then(()=>showToast('Link copied'));}
   else{const el=document.createElement('input');el.value=url;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);showToast('Link copied');}
 }
@@ -1743,7 +2101,6 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
     if(p==='mylist')refreshFavPage();
     if(p==='discover')initDiscover();
-    if(p==='franchises')initFranchises();
   }
 
   let _logoLong=false,_logoTimer=null;
@@ -1775,34 +2132,22 @@ document.addEventListener('DOMContentLoaded',()=>{
     S.favs=[];save();refreshFavPage();showToast('My List cleared');
   });
   document.getElementById('fav-sort')?.addEventListener('change',e=>{S.favSort=e.target.value;refreshFavPage();});
-  document.getElementById('franchise-back-btn')?.addEventListener('click',initFranchises);
 
   // Player
-  document.getElementById('player-back-btn').addEventListener('click',()=>{stopPlayer();goTo(S.lastPage||'home',false,true);});
+  document.getElementById('player-back-btn').addEventListener('click',()=>{haptic();goBack();});
   document.getElementById('player-ep-toggle')?.addEventListener('click',()=>document.getElementById('player-ep-panel')?.classList.toggle('open'));
+  document.getElementById('player-episodes-btn')?.addEventListener('click',()=>document.getElementById('player-ep-panel')?.classList.toggle('open'));
+  document.getElementById('player-next-ep')?.addEventListener('click',()=>{haptic();nextEpisode();});
+  document.getElementById('player-prev-ep')?.addEventListener('click',()=>{haptic();prevEpisode();});
   document.getElementById('pep-close')?.addEventListener('click',()=>document.getElementById('player-ep-panel')?.classList.remove('open'));
-  document.getElementById('auto-next-cancel')?.addEventListener('click',cancelAutoNext);
-  document.getElementById('auto-next-play')?.addEventListener('click',()=>{cancelAutoNext();nextEpisode();});
-  const subSel=document.getElementById('sub-lang-select');
-  if(subSel){
-    subSel.value=S.subLang;
-    subSel.addEventListener('change',()=>{
-      S.subLang=subSel.value;
-      localStorage.setItem('wt_sub_lang',S.subLang);
-      if(S.playerItem)loadVidSrcWithServer(S.playerItem.id,S.playerType,S.playerSeason,S.playerEp);
-      showToast(S.subLang?`Subtitles: ${subSel.options[subSel.selectedIndex].text}`:'Subtitles off');
-    });
-  }
 
   // Title page
-  document.getElementById('tp-back-btn')?.addEventListener('click',()=>goTo(S.titlePrevPage||'home',false,true));
+  document.getElementById('tp-back-btn')?.addEventListener('click',()=>{haptic();goBack();});
   document.getElementById('tp-share-btn')?.addEventListener('click',()=>{if(S.titleItem)shareCard(S.titleItem);});
   document.getElementById('tp-copy-link-btn')?.addEventListener('click',copyTitleLink);
 
   // Person page
-  document.getElementById('person-back-btn')?.addEventListener('click',()=>{
-    if(S.titleItem)openTitlePage(S.titleItem);else goTo(S.lastPage||'home',false,true);
-  });
+  document.getElementById('person-back-btn')?.addEventListener('click',()=>{haptic();goBack();});
 
   // Trailer
   document.getElementById('trailer-close')?.addEventListener('click',closeTrailer);
@@ -1812,6 +2157,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('discover-next')?.addEventListener('click',discoverNext);
   document.getElementById('discover-prev')?.addEventListener('click',discoverPrev);
   document.getElementById('discover-watch')?.addEventListener('click',discoverWatch);
+  document.getElementById('discover-play')?.addEventListener('click',discoverPlay);
   document.getElementById('discover-skip')?.addEventListener('click',discoverSkip);
   document.getElementById('discover-type-movie')?.addEventListener('click',()=>{
     S.discoverType='movie';
@@ -1838,18 +2184,28 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
   document.addEventListener('click',e=>{if(!e.target.closest('#card-menu'))closeCardMenu();});
 
-  let _tpTap=0;
-  document.getElementById('tp-backdrop-wrap')?.addEventListener('click',()=>{
-    const now=Date.now();
-    if(now-_tpTap<400&&S.titleItem){haptic('heavy');playItem(S.titleItem);}
-    _tpTap=now;
+  const playFromTitleBackdrop=()=>{if(S.titleItem){haptic('heavy');playItem(S.titleItem);}};
+  document.getElementById('tp-backdrop-wrap')?.addEventListener('click',playFromTitleBackdrop);
+  document.getElementById('tp-play-hint')?.addEventListener('click',e=>{e.stopPropagation();playFromTitleBackdrop();});
+  document.getElementById('tp-poster-btn')?.addEventListener('click',()=>{
+    const src=document.getElementById('tp-poster')?.src;
+    if(src)openPosterLightbox(src,document.getElementById('tp-poster')?.alt);
   });
+  document.getElementById('poster-lightbox-close')?.addEventListener('click',closePosterLightbox);
+  document.getElementById('poster-lightbox-backdrop')?.addEventListener('click',closePosterLightbox);
 
   // Search
   document.getElementById('search-icon-btn').addEventListener('click',openSearch);
   document.getElementById('search-overlay-close')?.addEventListener('click',closeSearch);
   document.getElementById('search-overlay-backdrop')?.addEventListener('click',closeSearch);
-  document.getElementById('search-overlay-input')?.addEventListener('input',e=>handleSearchInput(e.target.value));
+  document.getElementById('search-overlay-input')?.addEventListener('input',e=>{
+    handleSearchInput(e.target.value);
+    if(!e.target.value.trim())renderRecentSearches();
+  });
+  document.getElementById('search-recent-clear')?.addEventListener('click',()=>{
+    S.recentSearches=[];localStorage.removeItem('wt_recent');renderRecentSearches();
+    showToast('Recent searches cleared');
+  });
   document.querySelectorAll('.search-filter-btn').forEach(b=>b.addEventListener('click',()=>setSearchFilter(b.dataset.f)));
 
   // Server panel
@@ -1886,7 +2242,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   buildFilterChips('series-sort','series-sort-chips');
   bindGridFilters('movie');
   bindGridFilters('tv');
-  setupGenres();initKeyboard();initDiscoverSwipe();startHomeRefresh();
+  setupGenres();initKeyboard();initDiscoverSwipe();initHomePullRefresh();setupDiscoverGenres();startHomeRefresh();
 
   // Start
   goTo(startPage,true);
@@ -1894,12 +2250,15 @@ document.addEventListener('DOMContentLoaded',()=>{
   else if(startPage==='series')navTo('series');
   else if(startPage==='mylist')navTo('mylist');
   else if(startPage==='discover')navTo('discover');
-  else if(startPage==='franchises')navTo('franchises');
   else loadHome();
   if(startPage!=='home')loadHome();
 
   // Hash routing
   if(window.location.hash)routeFromHash();
+  window.addEventListener('popstate',()=>{
+    const hash=window.location.hash.replace(/^#\/?/,'');
+    if(!hash&&['title','person','player'].includes(S.page))goBack();
+  });
 
   // PWA
   if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});

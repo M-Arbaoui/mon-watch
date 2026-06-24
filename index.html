@@ -42,7 +42,7 @@
 <div class="intro" id="intro">
   <div class="intro-word">
     <div class="intro-big">Watchy<span class="dot">.</span></div>
-    <div class="intro-tag">Quite Cinema</div>
+    <div class="intro-tag">Quiet Cinema</div>
   </div>
 </div>
 
@@ -56,7 +56,6 @@
     <button class="nav-link" data-page="movies">Movies</button>
     <button class="nav-link" data-page="series">Series</button>
     <button class="nav-link" data-page="discover">Discover</button>
-    <button class="nav-link" data-page="franchises">Franchises</button>
     <button class="nav-link" data-page="mylist">My List</button>
   </div>
   <div class="nav-right">
@@ -83,6 +82,13 @@
       <button class="search-filter-btn active" data-f="all">All</button>
       <button class="search-filter-btn" data-f="movie">Movies</button>
       <button class="search-filter-btn" data-f="tv">Series</button>
+    </div>
+    <div class="search-recent" id="search-recent" style="display:none">
+      <div class="search-recent-head">
+        <span class="search-recent-label">Recent</span>
+        <button class="search-recent-clear" id="search-recent-clear" type="button">Clear</button>
+      </div>
+      <div class="search-recent-list" id="search-recent-list"></div>
     </div>
     <div class="search-count" id="search-result-count"></div>
     <div class="search-overlay-results" id="search-overlay-results"></div>
@@ -120,10 +126,12 @@
 <!-- HOME PAGE -->
 <div id="page-home" class="page" tabindex="-1">
   <section id="hero">
+    <div id="hero-ambient" class="hero-ambient" aria-hidden="true"></div>
     <div id="hero-bg" class="hero-bg"></div>
     <div id="hero-bg-next" class="hero-bg hero-bg-next" aria-hidden="true"></div>
+    <div id="hero-video" class="hero-video" aria-hidden="true"></div>
     <div class="hero-content">
-      <div class="hero-eyebrow"><span class="hero-pulse"></span><span id="hero-type">Film</span></div>
+      <div class="hero-eyebrow"><span class="hero-pulse"></span><span id="hero-type">Film</span><span class="hero-daily-badge" id="hero-daily-badge" style="display:none">✦ Today's Pick</span></div>
       <p class="hero-greeting" id="hero-greeting"></p>
       <h1 class="hero-title" id="hero-title">Loading…</h1>
       <div class="hero-meta">
@@ -143,15 +151,11 @@
     </div>
     <div class="hero-nav" id="hero-dots"></div>
   </section>
-  <div class="mood-bar" id="mood-bar"><span class="mood-label">Genre</span></div>
-  <div class="spotlight daily-pick" id="daily-pick">
-    <div class="spotlight-bg" id="daily-pick-bg"></div>
-    <div class="spotlight-content">
-      <div class="spotlight-kicker">✦ Today's Pick</div>
-      <div class="spotlight-title" id="daily-pick-title"></div>
-      <div class="spotlight-quote" id="daily-pick-quote"></div>
-    </div>
+  <div class="home-pull-hint" id="home-pull-hint" aria-hidden="true">
+    <div class="home-pull-spinner"></div>
+    <span>Release to refresh</span>
   </div>
+  <div class="mood-bar" id="mood-bar"><span class="mood-label">Genre</span></div>
   <section id="continue-sec" class="section" style="display:none">
     <div class="section-head">
       <h2 class="section-title">Continue Watching</h2>
@@ -214,8 +218,10 @@
     <span class="footer-sep">—</span>
     <a class="footer-credit" href="https://www.instagram.com/arbw_13" target="_blank" rel="noopener">by Mohammed</a>
     <span class="footer-sep">·</span>
+    <a class="footer-TMDB" href="https://www.themoviedb.org/" target="_blank" rel="noopener">Data by TMDB</a>
   </footer>
 </div>
+
 <!-- MOVIES -->
 <div id="page-movies" class="page">
   <div class="aux-header">
@@ -296,137 +302,158 @@
   <div id="fav-grid" class="grid-page fav-grid-sortable"></div>
 </div>
 
-<!-- FRANCHISES -->
-<div id="page-franchises" class="page">
-  <div class="aux-header">
-    <h1 class="aux-title">Franchises</h1>
-    <p class="aux-sub">Explore iconic film &amp; series collections</p>
-  </div>
-  <div id="franchise-list" class="franchise-list"></div>
-  <section id="franchise-detail" class="section" style="display:none">
-    <div class="section-head">
-      <h2 class="section-title" id="franchise-detail-title">Collection</h2>
-      <button class="section-clear-btn" id="franchise-back-btn">All Franchises</button>
-    </div>
-    <div id="franchise-rail" class="rail"></div>
-  </section>
-</div>
-
 <!-- DISCOVER PAGE -->
 <div id="page-discover" class="page">
   <div class="discover-wrap">
     <div class="discover-top">
-      <h1 class="discover-heading">Discover</h1>
+      <div>
+        <h1 class="discover-heading">Discover</h1>
+        <p class="discover-sub">Find your next watch</p>
+      </div>
       <div class="discover-type-row">
         <button class="discover-type-btn active" data-t="movie" id="discover-type-movie">Movies</button>
         <button class="discover-type-btn" data-t="tv" id="discover-type-tv">Series</button>
       </div>
     </div>
+    <div class="discover-genres" id="discover-genres"></div>
     <div class="discover-moods" id="discover-moods">
-      <button class="mood-chip active" data-mood="random">Surprise Me</button>
-      <button class="mood-chip" data-mood="light">Something Light</button>
-      <button class="mood-chip" data-mood="short">Under 90 min</button>
-      <button class="mood-chip" data-mood="gems">Hidden Gems</button>
-      <button class="mood-chip" data-mood="epic">Epic &amp; Long</button>
+      <button class="mood-chip active" data-mood="random">✦ Surprise Me</button>
+      <button class="mood-chip" data-mood="light">☀ Something Light</button>
+      <button class="mood-chip" data-mood="short">⏱ Under 90 min</button>
+      <button class="mood-chip" data-mood="gems">💎 Hidden Gems</button>
+      <button class="mood-chip" data-mood="epic">🎬 Epic &amp; Long</button>
+      <button class="mood-chip" data-mood="trending">🔥 Trending</button>
     </div>
     <div class="discover-loading" id="discover-loading" style="display:none">
       <div class="discover-spinner"></div>
     </div>
-    <div class="discover-card" id="discover-card">
-      <div class="discover-bg" id="discover-bg"></div>
-      <div class="discover-overlay"></div>
-      <div class="discover-content">
-        <div class="discover-genre-tag" id="discover-genre"></div>
-        <h2 class="discover-title" id="discover-title"></h2>
-        <div class="discover-meta-row">
-          <span id="discover-score"></span>
-          <span class="hero-sep"></span>
-          <span id="discover-year"></span>
+    <div class="discover-stage" id="discover-stage">
+      <div class="discover-card" id="discover-card">
+        <div id="discover-ambient" class="discover-ambient" aria-hidden="true"></div>
+        <div class="discover-bg" id="discover-bg"></div>
+        <div class="discover-bg-next" id="discover-bg-next" aria-hidden="true"></div>
+        <div class="discover-video" id="discover-video" aria-hidden="true"></div>
+        <div class="discover-overlay"></div>
+        <div class="discover-layout">
+          <div class="discover-poster-wrap">
+            <img id="discover-poster" class="discover-poster" src="" alt="" loading="lazy">
+          </div>
+          <div class="discover-content">
+            <div class="discover-genre-tag" id="discover-genre"></div>
+            <h2 class="discover-title" id="discover-title"></h2>
+            <div class="discover-meta-row">
+              <span id="discover-score"></span>
+              <span class="hero-sep"></span>
+              <span id="discover-year"></span>
+              <span class="hero-sep"></span>
+              <span id="discover-runtime"></span>
+            </div>
+            <p class="discover-overview" id="discover-overview"></p>
+            <div class="discover-actions">
+              <button class="btn-primary" id="discover-play">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M8 5v14l11-7z"/></svg>Watch Now
+              </button>
+              <button class="btn-ghost" id="discover-watch">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>More Info
+              </button>
+              <button class="btn-list discover-fav-btn" id="discover-fav" type="button">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l8.84 8.84 8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                <span>My List</span>
+              </button>
+              <button class="btn-ghost discover-skip-btn" id="discover-skip" type="button">Not Interested</button>
+            </div>
+          </div>
         </div>
-        <p class="discover-overview" id="discover-overview"></p>
-        <div class="discover-actions">
-          <button class="btn-primary" id="discover-watch">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>More Info
+        <div class="discover-nav">
+          <button class="discover-arrow" id="discover-prev" aria-label="Previous">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="m15 18-6-6 6-6"/></svg>
           </button>
-          <button class="btn-ghost" id="discover-skip" type="button">Not Interested</button>
+          <span class="discover-counter" id="discover-counter">1 / 20</span>
+          <button class="discover-arrow" id="discover-next" aria-label="Next">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
         </div>
+        <div class="discover-hint">Swipe or use ← → · Enter to watch</div>
       </div>
-      <div class="discover-nav">
-        <button class="discover-arrow" id="discover-prev">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="m15 18-6-6 6-6"/></svg>
-        </button>
-        <span class="discover-counter" id="discover-counter">1 / 20</span>
-        <button class="discover-arrow" id="discover-next">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="m9 18 6-6-6-6"/></svg>
-        </button>
-      </div>
-      <div class="discover-hint">Swipe or use ← → keys · Enter for info</div>
     </div>
   </div>
 </div>
 
 <!-- TITLE PAGE -->
 <div id="page-title" class="page">
-  <div class="tp-backdrop-wrap" id="tp-backdrop-wrap" title="Double-tap to play">
-    <div class="tp-backdrop" id="tp-backdrop"></div>
-    <div class="tp-backdrop-grad"></div>
-  </div>
+  <div id="tp-ambient" class="tp-ambient" aria-hidden="true"></div>
   <div class="tp-body">
     <button class="tp-back-btn" id="tp-back-btn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="m15 18-6-6 6-6"/></svg>
       Back
     </button>
-    <div class="tp-header">
-      <div class="tp-badges">
-        <span class="tp-type-badge" id="tp-type-badge">Movie</span>
-        <span id="tp-score"></span>
+    <div class="tp-skeleton" id="tp-skeleton" style="display:none" aria-hidden="true"></div>
+    <div class="tp-hero-layout" id="tp-hero-layout">
+      <div class="tp-poster-col">
+        <button class="tp-poster-btn" id="tp-poster-btn" type="button" aria-label="Expand poster">
+          <img id="tp-poster" class="tp-poster" src="" alt="" loading="eager">
+        </button>
       </div>
-      <h1 class="tp-title" id="tp-title">Loading…</h1>
-      <div class="tp-meta-row">
-        <span id="tp-year"></span>
-        <span class="hero-sep"></span>
-        <span id="tp-runtime"></span>
-        <span class="hero-sep"></span>
-        <span id="tp-seasons"></span>
+      <div class="tp-backdrop-col" id="tp-backdrop-wrap" title="Tap to play">
+        <div class="tp-backdrop" id="tp-backdrop"></div>
+        <div class="tp-backdrop-grad"></div>
+        <button class="tp-play-hint" id="tp-play-hint" type="button" aria-label="Play">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <div class="tp-header">
+          <div class="tp-badges">
+            <span class="tp-type-badge" id="tp-type-badge">Movie</span>
+            <span id="tp-score"></span>
+          </div>
+          <h1 class="tp-title" id="tp-title">Loading…</h1>
+          <div class="tp-meta-row">
+            <span id="tp-year"></span>
+            <span class="hero-sep"></span>
+            <span id="tp-runtime"></span>
+            <span class="hero-sep"></span>
+            <span id="tp-seasons"></span>
+          </div>
+          <div id="tp-genres" class="tp-genres"></div>
+          <div id="tp-error" class="tp-error" style="display:none" role="alert"></div>
+          <div id="tp-rating-block" style="display:none"></div>
+          <div id="tp-justwatch-block" style="display:none"></div>
+          <p class="tp-overview" id="tp-overview"></p>
+          <div class="tp-actions">
+            <button class="btn-primary" id="tp-watch-btn">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Watch Now
+            </button>
+            <button class="btn-ghost" id="tp-restart-btn" style="display:none" type="button">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              Start Over
+            </button>
+            <button class="btn-list" id="tp-fav-btn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l8.84 8.84 8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              <span>My List</span>
+            </button>
+            <div id="tp-trailer-wrap"></div>
+            <button class="tp-share-btn" id="tp-share-btn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              Share Card
+            </button>
+            <button class="tp-share-btn" id="tp-copy-link-btn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              Copy Link
+            </button>
+          </div>
+        </div>
       </div>
-      <div id="tp-genres" class="tp-genres"></div>
-
-      <div id="tp-error" class="tp-error" style="display:none" role="alert"></div>
-      <!-- TMDB rating block — populated by JS -->
-      <div id="tp-rating-block" style="display:none"></div>
-
-      <!-- JustWatch streaming availability — populated by JS -->
-      <div id="tp-justwatch-block" style="display:none"></div>
-
-      <p class="tp-overview" id="tp-overview"></p>
-      <div class="tp-actions">
-        <button class="btn-primary" id="tp-watch-btn">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Watch Now
-        </button>
-        <button class="btn-ghost" id="tp-restart-btn" style="display:none" type="button">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-          Start Over
-        </button>
-        <button class="btn-list" id="tp-fav-btn">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l8.84 8.84 8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>
-          <span>My List</span>
-        </button>
-        <div id="tp-trailer-wrap"></div>
-        <button class="tp-share-btn" id="tp-share-btn">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-          Share Card
-        </button>
-        <button class="tp-share-btn" id="tp-copy-link-btn">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          Copy Link
-        </button>
-      </div><!-- /tp-actions -->
     </div>
 
     <!-- Cast -->
     <section class="tp-section">
       <h2 class="tp-section-title">Cast</h2>
       <div class="cast-rail" id="tp-cast-rail"></div>
+    </section>
+
+    <!-- Up Next (series) -->
+    <section class="tp-section" id="tp-upnext-sec" style="display:none">
+      <h2 class="tp-section-title">Up Next</h2>
+      <div class="tp-upnext-card" id="tp-upnext-card"></div>
     </section>
 
     <!-- Episodes -->
@@ -477,18 +504,6 @@
   <div class="player-topbar">
     <div class="player-topbar-logo">Watchy<span class="dot">.</span></div>
     <div class="player-topbar-right">
-      <select class="sub-lang-select" id="sub-lang-select" aria-label="Subtitle language">
-        <option value="">Subs: Off</option>
-        <option value="en">English</option>
-        <option value="fr">French</option>
-        <option value="es">Spanish</option>
-        <option value="ar">Arabic</option>
-        <option value="de">German</option>
-        <option value="it">Italian</option>
-        <option value="pt">Portuguese</option>
-        <option value="ja">Japanese</option>
-        <option value="ko">Korean</option>
-      </select>
       <button class="src-toggle-btn" id="server-panel-toggle" aria-haspopup="true" aria-expanded="false" title="Switch source">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         Sources
@@ -520,16 +535,19 @@
     <div class="player-loader" id="player-loader"><div class="player-loader-ring"></div></div>
   </div>
 
-  <div class="auto-next-bar" id="auto-next-bar">
-    <div class="auto-next-top">
-      <div class="auto-next-label">Up Next</div>
-      <div class="auto-next-btns">
-        <button class="auto-next-btn cancel" id="auto-next-cancel">Cancel</button>
-        <button class="auto-next-btn playnow" id="auto-next-play">Play Now</button>
-      </div>
-    </div>
-    <div class="auto-next-ep" id="auto-next-ep"></div>
-    <div class="auto-next-track"><div class="auto-next-fill" id="auto-next-fill"></div></div>
+  <div class="player-nav-bar" id="player-nav-bar" style="display:none">
+    <button class="player-nav-btn" id="player-prev-ep" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="m15 18-6-6 6-6"/></svg>
+      Previous
+    </button>
+    <button class="player-nav-btn player-nav-episodes" id="player-episodes-btn" type="button">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z"/></svg>
+      Episodes
+    </button>
+    <button class="player-nav-btn player-nav-next" id="player-next-ep" type="button">
+      Next Episode
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
   </div>
 
   <button class="player-ep-toggle" id="player-ep-toggle" style="display:none">
@@ -567,6 +585,13 @@
       <div id="similar-rail" class="rail"></div>
     </section>
   </div>
+</div>
+
+<!-- POSTER LIGHTBOX -->
+<div class="poster-lightbox" id="poster-lightbox" role="dialog" aria-modal="true" aria-label="Poster">
+  <div class="poster-lightbox-backdrop" id="poster-lightbox-backdrop"></div>
+  <img id="poster-lightbox-img" class="poster-lightbox-img" src="" alt="">
+  <button class="poster-lightbox-close" id="poster-lightbox-close" type="button" aria-label="Close">✕</button>
 </div>
 
 <!-- TRAILER MODAL -->
